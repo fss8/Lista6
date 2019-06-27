@@ -1,0 +1,226 @@
+#include <iostream>
+#define INFINITO 99999999999
+using namespace std;
+
+//int D[10000000],F[10000000];
+
+struct RetornoHeap{
+    long int dist;
+    int vertice;
+};
+
+struct Pedidos{
+    int id;
+    int qtd;
+};
+
+int tamanho; RetornoHeap *heap;
+
+class GrafoObj{
+public:
+    long int **Peso; long int **DiS; int v;
+    int **Armaz; int *F; long int *D;
+    GrafoObj(int V, int B){
+        //Graf = (Graph**)malloc((V)*sizeof(Graph*));
+        Peso = (long**)malloc((V)*sizeof(long*));
+        DiS = (long**)malloc((V)*sizeof(long*));
+        Armaz = (int **)malloc((V+1)*sizeof(int*));
+        heap = (RetornoHeap*)malloc((2*V)*sizeof(RetornoHeap));
+        F = (int*)malloc((V)*sizeof(int));
+        D = (long*)malloc((V)*sizeof(long));
+        for(int i = 0; i < V; i++){
+            //Graf[i] = create_raiz(i, 0, 0);
+            Peso[i] = (long*)malloc((V)*sizeof(long));
+            DiS[i] = (long*)malloc((V)*sizeof(long));
+            Armaz[i] = (int*)malloc((B+1)*sizeof(int));
+            }
+        v = V;
+    }
+    void Dijkstra(int s, Pedidos A[], int M){
+        int Encontrou = 0; int eu;
+        for(int i = 0; i < v; i++){
+            D[i] = INFINITO;
+            F[i] = -1;
+            heap[i].vertice = i;
+            heap[i].dist = INFINITO;
+        }
+        D[s] = 0;
+        F[s] = s;
+        int tam = 0;
+        long long int d,u;
+        RetornoHeap a; RetornoHeap w;
+        //Inserir na heap
+        tamanho = v;
+        min_heap_insert({0,s},s);
+        while(tamanho > 0){
+            a = min_heap_extract();
+            d = a.dist;  u = a.vertice;
+            if(d != INFINITO){
+                //Encontrou = 0;
+                for(int j = 0; j < M; j++){
+                    if(Armaz[u][A[j].id] < A[j].qtd){
+                        Encontrou = 2;
+                        break;
+                    }
+                    if(j == M-1){
+                        Encontrou = 1;
+                        for(int k = 0; k < M; k++){
+                            Armaz[u][A[k].id] -= A[k].qtd;
+                        }
+                        PrintarCaminho(s,u);
+                    }
+                }
+                if(Encontrou == 1){
+                    break;
+                }
+            }
+            else{
+                //cout << "OOS" << "\n";
+                break;
+            }
+            //e = Graf[u];
+            eu = u;
+            for(int i = 0; i < v; i++){
+                //int q;
+                if(Peso[eu][i] != -1){
+                    if(D[i] > d+Peso[eu][i]){
+                        D[i] = d+Peso[eu][i];
+                        F[i] = u;
+                        w.dist = D[i];
+                        w.vertice = i;
+                        min_heap_update(w);
+                    }
+                }//q++;
+            }
+        }
+        if(Encontrou == 0 || Encontrou == 2){
+            cout << "OOS" << "\n";
+        }
+    }
+    void min_heap_insert(RetornoHeap r, int id){
+        int pos = id;
+        heap[pos].dist = r.dist;
+        heap[pos].vertice = r.vertice;
+        BubbleUp0(pos);
+    }
+    RetornoHeap min_heap_extract(){
+        RetornoHeap t;
+        t.vertice = heap[0].vertice;
+        t.dist = heap[0].dist;
+        TrocaSoldados(0, tamanho-1);
+        tamanho--;
+        heapfy(0);
+        return t;
+    }
+    void min_heap_update(RetornoHeap t){
+        int i;
+        for(i = 0; i < tamanho; i++){
+            if(heap[i].vertice == t.vertice){
+                //cout << i <<" I ";
+                break;  }
+        }
+        heap[i].dist = t.dist;
+        BubbleUp0(i);
+        heapfy(i);
+    }
+    void heapfy(int i){
+        int l = (2*i)+1, r = (2*i)+2, m = i;
+        if ((l < tamanho && heap[l].dist < heap[m].dist) || (l < tamanho && heap[l].dist == heap[m].dist && heap[l].vertice < heap[m].vertice)) {
+            m = l;
+        }
+        if ((r < tamanho && heap[r].dist < heap[m].dist) || (r < tamanho && heap[r].dist == heap[m].dist && heap[r].vertice < heap[m].vertice)) {
+            m = r;
+        }
+        if(m != i) {
+            TrocaSoldados(i, m);
+            heapfy(m);
+        }
+    }
+    void BubbleUp0(int i){
+        int p = (i-1)/2;
+        while((i > 0 && heap[i].dist <  heap[p].dist)  || (i > 0 && (heap[i].dist == heap[p].dist) && (heap[i].vertice < heap[p].vertice))){
+            TrocaSoldados(i, p);
+            i = p;
+            p = (i-1)/2;
+        }
+    }
+    void TrocaSoldados(int i, int p) {
+        int temp1 = heap[i].dist;
+        int temp2 = heap[i].vertice;
+        heap[i].vertice = heap[p].vertice;
+        heap[i].dist = heap[p].dist;
+        heap[p].vertice = temp2;
+        heap[p].dist = temp1;
+    }
+    void PrintarCaminho(int R, int S){
+        int p = D[S];
+        int u = S;
+        if(F[u] != p){
+            cout << S << " ";
+        }
+        while(F[u] != R){
+            cout << F[u] << " ";
+            u = F[u];
+        }
+        if(F[u] != S){
+            cout << F[u] << " " ;
+        }
+        cout << p << "\n";
+        //}
+    }
+};
+
+int main() {
+    long int value, ds, coefic; long int custo; int T,M; int id,qtd; int local,repor;
+    int V,E,B,X,Y; string abc;
+    cin >> V >> E >> B;
+    GrafoObj *GRF; GRF = new GrafoObj(V,B);
+    for(int i = 0; i < V; i++){
+        for(int j = 0; j < V; j++){
+            GRF->Peso[i][j] = -1;
+            GRF->DiS[i][j] = -1;
+        }
+    }
+    for(int i = 0; i < E; i++){
+        cin >> X >> Y >> ds >> coefic;
+        custo = ( ds * ( 100 + coefic ) ) / 100;
+        //GRF->EncontraProx(X, Y, custo, ds);
+        //GRF->EncontraProx(Y, X, custo, ds);
+        GRF->Peso[X][Y] = custo; GRF->Peso[Y][X] = custo;
+        GRF->DiS[X][Y] = ds; GRF->DiS[Y][X] = ds;
+    }
+    for(int r = 0; r < V; r++){
+        for(int j = 0; j < B; j++){
+            cin >> value;
+            GRF->Armaz[r][j] = value;
+        }
+    }
+    //cout << "Aqui";
+    cin >> abc;
+    while(abc[0] != 'E'){
+        if(abc[0] == 'O'){
+            cin >> T >> M;
+            Pedidos *A;
+            A = (Pedidos *) malloc((M) * sizeof(Pedidos));
+            for (int i = 0; i < M; i++) {
+                cin >> id >> qtd;
+                A[i].id = id;
+                A[i].qtd = qtd;
+            }
+        //
+            GRF->Dijkstra(T, A, M);
+            delete(A);
+        }
+        else if(abc[0] == 'U'){
+            cin >> X >> Y >> coefic;
+            custo = ( GRF->DiS[X][Y] * ( 100 + coefic ) ) / 100;
+            GRF->Peso[X][Y] = custo; GRF->Peso[Y][X] = custo;
+        }
+        else if(abc[0] == 'S'){
+            cin >> local >> X >> repor;
+            GRF->Armaz[local][X] += repor;
+        }
+        cin >> abc;
+    }
+    return 0;
+}
